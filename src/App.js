@@ -24,22 +24,9 @@ function useInterval(callback, delay) {
     }, [delay]);
 }
 
-function Cell({ isChecked, onClick, resolution }) {
-    return (
-        <div
-            style={{
-                backgroundColor: isChecked ? '#000' : '#fff',
-                border: '1px solid #333',
-                width: `calc(${100 / resolution}vw - 2px)`,
-                height: `calc(${100 / resolution}vw - 2px)`,
-            }}
-            onClick={onClick}
-        />
-    );
-}
-
 function App() {
     const [resolution, setResolution] = useState(10);
+    const [isResolutionChanging, setIsResolutonChanging] = useState(false);
     const [state, setState] = useState(makeInitialArray());
     const [isRunning, setIsRunning] = useState(false);
     const [delay, setDelay] = useState(1000);
@@ -57,10 +44,26 @@ function App() {
         isRunning ? delay : null,
     );
 
-    function makeInitialArray() {
-        return Array.from({ length: resolution })
+    function Cell({ isChecked, onClick, resolution }) {
+        return (
+            <div
+                style={{
+                    border: `1px solid ${
+                        isResolutionChanging ? '#333' : 'transparent'
+                    }`,
+                    width: `calc(${100 / resolution}vw - 2px)`,
+                    height: `calc(${100 / resolution}vw - 2px)`,
+                }}
+                className={`cell ${isChecked && 'checked'}`}
+                onClick={onClick}
+            />
+        );
+    }
+
+    function makeInitialArray(length = resolution) {
+        return Array.from({ length })
             .fill(false)
-            .map((_) => Array.from({ length: resolution }).fill(false));
+            .map((_) => Array.from({ length }).fill(false));
     }
 
     function shouldCellSurvive(state, i, j) {
@@ -95,7 +98,43 @@ function App() {
         return false;
     }
     return (
-        <div className="App">
+        <div>
+            <div style={{ height: '2rem', display: 'flex' }}>
+                <button
+                    style={{ width: '5rem' }}
+                    onClick={() => setIsRunning(!isRunning)}
+                >
+                    {isRunning ? 'Pause' : 'Play'}
+                </button>
+                <button
+                    style={{ width: '5rem' }}
+                    onClick={() => setState(makeInitialArray())}
+                >
+                    Clear
+                </button>
+                <input
+                    type="range"
+                    min="5"
+                    max="20"
+                    defaultValue="10"
+                    onChange={(e) => {
+                        const res = e.target.value;
+                        setResolution(res);
+                        setState(makeInitialArray(res));
+                    }}
+                    onMouseDown={() => setIsResolutonChanging(true)}
+                    onMouseUp={() => setIsResolutonChanging(false)}
+                ></input>
+                <input
+                    type="range"
+                    min="50"
+                    max="1000"
+                    defaultValue="1000"
+                    onChange={(e) => {
+                        setDelay(e.target.value);
+                    }}
+                ></input>
+            </div>
             {state.map((i, ix) => (
                 <div key={ix} style={{ display: 'flex' }}>
                     {i.map((j, jx) => (
@@ -116,31 +155,6 @@ function App() {
                     ))}
                 </div>
             ))}
-            <button onClick={() => setIsRunning(!isRunning)}>
-                {isRunning ? 'Pause' : 'Play'}
-            </button>
-            <button onClick={() => setState(makeInitialArray())}>Clear</button>
-            Resolution:
-            <input
-                type="range"
-                min="5"
-                max="20"
-                defaultValue="10"
-                onChange={(e) => {
-                    setResolution(e.target.value);
-                    setState(makeInitialArray());
-                }}
-            ></input>
-            Delay:
-            <input
-                type="range"
-                min="50"
-                max="1000"
-                defaultValue="1000"
-                onChange={(e) => {
-                    setDelay(e.target.value);
-                }}
-            ></input>
         </div>
     );
 }
