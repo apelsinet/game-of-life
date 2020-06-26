@@ -1,8 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 import produce from 'immer';
+import * as Tone from 'tone';
 
 import './App.css';
+
+const tones = [
+    'C#3',
+    'D#3',
+    'E3',
+    'F#3',
+    'G#3',
+    'A3',
+    'B3',
+    'C#4',
+    'D#4',
+    'E4',
+    'F#4',
+    'G#4',
+    'A4',
+    'B4',
+    'C#5',
+    'D#5',
+    'E5',
+    'F#5',
+    'G#5',
+    'A5',
+    'B5',
+];
 
 function useInterval(callback, delay) {
     const savedCallback = useRef();
@@ -30,15 +55,46 @@ function App() {
     const [state, setState] = useState(makeInitialArray());
     const [isRunning, setIsRunning] = useState(false);
     const [delay, setDelay] = useState(1000);
+    const synth = useRef(null);
+
+    useEffect(() => {
+        const delay = new Tone.PingPongDelay('4n', 0.2).toMaster();
+        delay.wet.value = 0.4;
+        const reverb = new Tone.Reverb().toMaster();
+        reverb.wet.value = 0.9;
+        synth.current = new Tone.FMSynth({
+            oscillator: {
+                type: 'sine',
+            },
+            envelope: {
+                attack: 0.1,
+                decay: 0.2,
+                sustain: 0.2,
+                release: 0.1,
+            },
+            harmonicity: 1.2,
+        })
+            .chain(reverb, delay)
+            .toMaster();
+    }, []);
 
     useInterval(
         () => {
             const nextState = makeInitialArray();
-            nextState.forEach((i, ix) =>
-                i.forEach((_, jx) => {
+            let tonesPlayed = 0;
+            nextState.forEach((i, ix) => {
+                i.forEach((j, jx) => {
+                    if (state[ix][jx] && tonesPlayed < 4) {
+                        synth.current.triggerAttackRelease(
+                            tones[jx],
+                            '8n',
+                            '+0.15',
+                        );
+                        tonesPlayed++;
+                    }
                     nextState[ix][jx] = shouldCellSurvive(state, ix, jx);
-                }),
-            );
+                });
+            });
             setState(nextState);
         },
         isRunning ? delay : null,
@@ -146,6 +202,12 @@ function App() {
                             isChecked={j}
                             resolution={resolution}
                             onClick={() => {
+                                synth.current.triggerAttackRelease(
+                                    tones[ix],
+                                    '8n',
+                                    '+0.05',
+                                );
+
                                 const nextState = produce(
                                     state,
                                     (draftState) => {
