@@ -108,7 +108,10 @@ function App() {
                 </button>
                 <button
                     style={{ width: '5rem' }}
-                    onClick={() => setState(makeInitialArray())}
+                    onClick={() => {
+                        setIsRunning(false);
+                        setState(makeInitialArray());
+                    }}
                 >
                     Clear
                 </button>
